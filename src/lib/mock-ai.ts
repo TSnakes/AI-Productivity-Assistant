@@ -1,23 +1,52 @@
 // Lightweight deterministic mock "AI" so the app feels responsive without a backend.
+// Designed to degrade gracefully: missing/huge/garbled inputs still produce a usable result.
+
+const MAX_TOPIC_LEN = 600;
+const MAX_NOTES_LEN = 8000;
+const MAX_TASKS = 12;
+const MAX_TASK_LEN = 140;
+
+function sanitize(input: unknown, max: number): string {
+  if (typeof input !== "string") return "";
+  // Strip control chars, collapse whitespace, trim, and cap length.
+  const cleaned = input
+    .replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return cleaned.length > max ? cleaned.slice(0, max).trimEnd() + "…" : cleaned;
+}
+
+function toSubject(topic: string): string {
+  const firstLine = topic.split(/\n/)[0] ?? topic;
+  const short = firstLine.length > 70 ? firstLine.slice(0, 67).trimEnd() + "…" : firstLine;
+  // Capitalize first letter without altering the rest.
+  return short.charAt(0).toUpperCase() + short.slice(1);
+}
 
 export function mockEmail(topic: string, tone: "Formal" | "Friendly" | "Persuasive"): string {
-  const t = topic.trim() || "our upcoming project update";
+  const safeTone: "Formal" | "Friendly" | "Persuasive" =
+    tone === "Formal" || tone === "Friendly" || tone === "Persuasive" ? tone : "Formal";
+  const cleaned = sanitize(topic, MAX_TOPIC_LEN);
+  const t = cleaned || "our upcoming project update";
+  const subject = toSubject(cleaned || "Project update");
+
   const greeting =
-    tone === "Formal" ? "Dear Team," : tone === "Friendly" ? "Hi team," : "Team —";
+    safeTone === "Formal" ? "Dear Team," : safeTone === "Friendly" ? "Hi team," : "Team —";
   const closing =
-    tone === "Formal"
+    safeTone === "Formal"
       ? "Kind regards,\n[Your Name]"
-      : tone === "Friendly"
+      : safeTone === "Friendly"
         ? "Thanks so much,\n[Your Name]"
         : "Looking forward to your response,\n[Your Name]";
 
-  const body: Record<typeof tone, string> = {
+  const body: Record<typeof safeTone, string> = {
     Formal: `I hope this message finds you well. I am writing to provide an update regarding ${t}. Please review the points below and let me know if you have any questions or require further clarification.\n\n• Context and current status\n• Key milestones and owners\n• Next steps and decisions required\n\nYour timely input would be greatly appreciated.`,
     Friendly: `Quick note about ${t} — wanted to keep everyone in the loop!\n\nHere's where we are:\n• What's done\n• What's in progress\n• What I need from you\n\nLet me know if anything looks off or you'd like to chat through it. 🙌`,
     Persuasive: `I want to share something important about ${t} — and why acting on it this week matters.\n\nWhy now:\n• Momentum is on our side\n• A short delay creates outsized downstream cost\n• A small commitment unlocks a meaningful win\n\nIf you can confirm by Friday, we can move forward immediately and keep this on track.`,
   };
 
-  return `Subject: Update — ${t}\n\n${greeting}\n\n${body[tone]}\n\n${closing}`;
+  return `Subject: ${subject}\n\n${greeting}\n\n${body[safeTone]}\n\n${closing}`;
 }
 
 export interface SummaryResult {
@@ -27,35 +56,60 @@ export interface SummaryResult {
 }
 
 export function mockSummarize(notes: string): SummaryResult {
-  const text = notes.trim();
+  const text = sanitize(notes, MAX_NOTES_LEN);
   if (!text) {
-    return { summary: "No notes provided.", actions: [], deadlines: [] };
+    return {
+      summary: "No notes provided. Paste a transcript or bullet points to generate a summary.",
+      actions: [],
+      deadlines: [],
+    };
   }
-  const sentences = text
-    .split(/[.!?\n]+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
 
+  const sentences = text
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.replace(/^[\s•\-–*\d.)]+/, "").trim())
+    .filter((s) => s.length >= 3);
+
+  // Fallback when input has no sentence-like structure (single phrase, no punctuation).
+  if (sentences.length === 0) {
+    const oneLiner = text.length > 160 ? text.slice(0, 157) + "…" : text;
+    return {
+      summary: `Notes captured: ${oneLiner}`,
+      actions: [`Review and expand: ${oneLiner}`],
+      deadlines: defaultDeadlines(),
+    };
+  }
+
+  const lead = sentences.slice(0, 2).join(". ").replace(/\.+$/, "");
   const summary =
-    sentences.slice(0, 2).join(". ") +
-    (sentences.length > 2 ? `. The team aligned on next steps and ownership for ${sentences.length} discussion points.` : ".");
+    sentences.length > 2
+      ? `${lead}. The team aligned on next steps and ownership across ${sentences.length} discussion points.`
+      : `${lead}.`;
 
   const verbs = ["Follow up on", "Draft", "Review", "Schedule", "Share", "Confirm"];
-  const actions = sentences.slice(0, Math.min(5, sentences.length)).map((s, i) => {
-    const trimmed = s.length > 80 ? s.slice(0, 80) + "…" : s;
-    return `${verbs[i % verbs.length]} ${trimmed}`;
-  });
+  const seen = new Set<string>();
+  const actions: string[] = [];
+  for (const s of sentences) {
+    if (actions.length >= 5) break;
+    const trimmed = s.length > 80 ? s.slice(0, 80).trimEnd() + "…" : s;
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    actions.push(`${verbs[actions.length % verbs.length]} ${trimmed}`);
+  }
 
+  return { summary, actions, deadlines: defaultDeadlines() };
+}
+
+function defaultDeadlines() {
   const today = new Date();
   const fmt = (d: Date) =>
     d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-  const deadlines = [
+  return [
     { label: "Initial draft circulated", when: fmt(addDays(today, 2)) },
     { label: "Stakeholder review complete", when: fmt(addDays(today, 5)) },
     { label: "Final sign-off", when: fmt(addDays(today, 9)) },
   ];
-
-  return { summary, actions, deadlines };
 }
 
 function addDays(d: Date, n: number) {
@@ -71,13 +125,18 @@ export interface PlanBlock {
 }
 
 export function mockPlan(tasks: string, priority: "High" | "Medium" | "Low"): PlanBlock[] {
-  const items = tasks
-    .split(/\n|,/)
-    .map((t) => t.trim())
-    .filter(Boolean);
+  const safePriority: "High" | "Medium" | "Low" =
+    priority === "High" || priority === "Medium" || priority === "Low" ? priority : "Medium";
+  const raw = sanitize(tasks, 4000);
+  const items = raw
+    .split(/\n|,|;/)
+    .map((t) => t.replace(/^[\s•\-–*\d.)]+/, "").trim())
+    .filter(Boolean)
+    .map((t) => (t.length > MAX_TASK_LEN ? t.slice(0, MAX_TASK_LEN - 1).trimEnd() + "…" : t))
+    .slice(0, MAX_TASKS);
   if (items.length === 0) return [];
 
-  const startHour = priority === "High" ? 8 : priority === "Medium" ? 9 : 10;
+  const startHour = safePriority === "High" ? 8 : safePriority === "Medium" ? 9 : 10;
   const blocks: PlanBlock[] = [];
   let hour = startHour;
 
