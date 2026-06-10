@@ -24,29 +24,42 @@ function toSubject(topic: string): string {
   return short.charAt(0).toUpperCase() + short.slice(1);
 }
 
-export function mockEmail(topic: string, tone: "Formal" | "Friendly" | "Persuasive"): string {
-  const safeTone: "Formal" | "Friendly" | "Persuasive" =
-    tone === "Formal" || tone === "Friendly" || tone === "Persuasive" ? tone : "Formal";
+export type EmailTone = "Formal" | "Friendly" | "Persuasive" | "Direct";
+
+export function mockEmail(
+  topic: string,
+  tone: EmailTone,
+  recipient?: string,
+): string {
+  const tones: EmailTone[] = ["Formal", "Friendly", "Persuasive", "Direct"];
+  const safeTone: EmailTone = tones.includes(tone) ? tone : "Formal";
   const cleaned = sanitize(topic, MAX_TOPIC_LEN);
+  const who = sanitize(recipient ?? "", 120);
   const t = cleaned || "our upcoming project update";
   const subject = toSubject(cleaned || "Project update");
 
-  const greeting =
-    safeTone === "Formal" ? "Dear Team," : safeTone === "Friendly" ? "Hi team," : "Team —";
-  const closing =
-    safeTone === "Formal"
-      ? "Kind regards,\n[Your Name]"
-      : safeTone === "Friendly"
-        ? "Thanks so much,\n[Your Name]"
-        : "Looking forward to your response,\n[Your Name]";
+  const audience = who || "Team";
+  const greeting: Record<EmailTone, string> = {
+    Formal: `Dear ${audience},`,
+    Friendly: `Hi ${audience.split(/[, ]/)[0] || "team"},`,
+    Persuasive: `${audience} —`,
+    Direct: `${audience.split(/[, ]/)[0] || "Team"},`,
+  };
+  const closing: Record<EmailTone, string> = {
+    Formal: "Kind regards,\n[Your Name]",
+    Friendly: "Thanks so much,\n[Your Name]",
+    Persuasive: "Looking forward to your response,\n[Your Name]",
+    Direct: "Thanks,\n[Your Name]",
+  };
 
-  const body: Record<typeof safeTone, string> = {
+  const body: Record<EmailTone, string> = {
     Formal: `I hope this message finds you well. I am writing to provide an update regarding ${t}. Please review the points below and let me know if you have any questions or require further clarification.\n\n• Context and current status\n• Key milestones and owners\n• Next steps and decisions required\n\nYour timely input would be greatly appreciated.`,
     Friendly: `Quick note about ${t} — wanted to keep everyone in the loop!\n\nHere's where we are:\n• What's done\n• What's in progress\n• What I need from you\n\nLet me know if anything looks off or you'd like to chat through it. 🙌`,
     Persuasive: `I want to share something important about ${t} — and why acting on it this week matters.\n\nWhy now:\n• Momentum is on our side\n• A short delay creates outsized downstream cost\n• A small commitment unlocks a meaningful win\n\nIf you can confirm by Friday, we can move forward immediately and keep this on track.`,
+    Direct: `Heads up on ${t}.\n\n• What I need: a clear yes/no by EOD Thursday\n• Why it matters: it unblocks the next milestone\n• What happens next: I'll send the rollout plan once confirmed\n\nIf there are blockers, reply with one line and I'll handle it.`,
   };
 
-  return `Subject: ${subject}\n\n${greeting}\n\n${body[safeTone]}\n\n${closing}`;
+  return `Subject: ${subject}\n\n${greeting[safeTone]}\n\n${body[safeTone]}\n\n${closing[safeTone]}`;
 }
 
 export interface SummaryResult {
@@ -170,6 +183,61 @@ export function mockChat(prompt: string): string {
     return "Paste your meeting notes into the Summarizer and I'll extract a summary, action items, and deadlines.";
   if (/plan|schedule|task|day/.test(p))
     return "Head to the Planner — list your tasks and I'll arrange them into an hourly schedule based on priority.";
+  if (/research|article|topic|learn/.test(p))
+    return "Drop a topic or URL into the Research Assistant — I'll return structured notes with key takeaways.";
   if (/hello|hi|hey/.test(p)) return "Hey! How can I help you stay productive today?";
   return `Here's a quick take on "${prompt}": break it into 2–3 concrete next steps, timebox the first one to 25 minutes, and revisit after a short break. (Always double-check anything important — I'm an AI.)`;
+}
+
+export interface ResearchResult {
+  topic: string;
+  sections: { heading: string; bullets: string[] }[];
+  takeaways: string[];
+  sources: { title: string; url: string }[];
+}
+
+export function mockResearch(query: string): ResearchResult {
+  const q = sanitize(query, 300) || "the requested topic";
+  const isUrl = /^https?:\/\//i.test(q);
+  const topic = isUrl ? q.replace(/^https?:\/\//i, "").split("/")[0] : q;
+  return {
+    topic,
+    sections: [
+      {
+        heading: "Overview",
+        bullets: [
+          `${topic} is a fast-moving area with active development across industry and academia.`,
+          "Recent shifts emphasize practical deployment, measurable outcomes, and lower operating cost.",
+          "Most credible coverage converges on a small set of patterns worth adopting early.",
+        ],
+      },
+      {
+        heading: "What's working",
+        bullets: [
+          "Teams that start small with clear success metrics ship within weeks, not quarters.",
+          "Pairing automation with a human-in-the-loop reduces error rates without slowing throughput.",
+          "Documentation and onboarding playbooks are the strongest predictors of long-term success.",
+        ],
+      },
+      {
+        heading: "Watch-outs",
+        bullets: [
+          "Vendor lock-in is the most common regret reported 12 months in.",
+          "Hidden costs cluster around data prep, evaluation, and ongoing review.",
+          "Compliance and privacy reviews should run in parallel, not after launch.",
+        ],
+      },
+    ],
+    takeaways: [
+      `Pilot ${topic} on one workflow with a 4-week measurable goal.`,
+      "Budget 30% of effort for evaluation and iteration after launch.",
+      "Pick tools with open formats and clear data-export paths.",
+      "Make a human review step part of the system, not an afterthought.",
+    ],
+    sources: [
+      { title: `Primer on ${topic}`, url: "https://example.com/primer" },
+      { title: `${topic}: 2026 landscape`, url: "https://example.com/landscape" },
+      { title: `Field notes from early adopters`, url: "https://example.com/field-notes" },
+    ],
+  };
 }

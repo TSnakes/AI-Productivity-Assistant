@@ -1,13 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { FileText, Sparkles, Loader2, CalendarDays } from "lucide-react";
+import { FileText, Sparkles, Loader2, CalendarDays, ArrowRight } from "lucide-react";
 import { mockSummarize, type SummaryResult } from "@/lib/mock-ai";
+import { setPlannerSeed } from "@/lib/shared-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/summarizer")({
   head: () => ({
     meta: [
-      { title: "Meeting Notes Summarizer — AI Workplace" },
+      { title: "Meeting Notes Summarizer — TRinko" },
       { name: "description", content: "Turn raw meeting notes into a summary, action items, and deadlines." },
     ],
   }),
@@ -15,6 +16,7 @@ export const Route = createFileRoute("/summarizer")({
 });
 
 function SummarizerPage() {
+  const navigate = useNavigate();
   const [notes, setNotes] = useState("");
   const [result, setResult] = useState<SummaryResult | null>(null);
   const [done, setDone] = useState<Record<number, boolean>>({});
@@ -23,7 +25,7 @@ function SummarizerPage() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!notes.trim()) {
-      toast.error("Paste some meeting notes to summarize.");
+      toast.error("Paste a transcript or bullet notes to summarize.");
       return;
     }
     setLoading(true);
@@ -34,6 +36,13 @@ function SummarizerPage() {
     }, 800);
   };
 
+  const convertToTasks = () => {
+    if (!result || result.actions.length === 0) return;
+    setPlannerSeed(result.actions.join("\n"));
+    toast.success("Action items sent to Planner");
+    navigate({ to: "/planner" });
+  };
+
   return (
     <div className="space-y-8">
       <header>
@@ -42,7 +51,7 @@ function SummarizerPage() {
         </div>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Meeting Notes Summarizer</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Paste raw notes — get an executive summary, action items, and deadlines.
+          Paste a transcript or rough notes. TRinko returns a tight summary, owned action items, and the dates you can't miss.
         </p>
       </header>
 
@@ -52,20 +61,33 @@ function SummarizerPage() {
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           rows={10}
-          placeholder="Paste the meeting transcript or your scribbled notes here…"
+          placeholder={"Tip: include names where you can — TRinko will route action items by owner.\n\ne.g.\nSarah walked us through the Q3 plan…\nDecision: ship beta to 50 customers by Sept 14\nMaya to follow up with legal on DPA template"}
           className="mt-2 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-ring"
         />
         <div className="mt-4 flex justify-end">
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-[oklch(0.55_0.18_280)] px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-md shadow-primary/30 hover:opacity-90 disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {loading ? "Summarizing…" : "Summarize notes"}
           </button>
         </div>
       </form>
+
+      {loading && !result && (
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-xl border border-border bg-card p-6 shadow-sm lg:col-span-2">
+            <div className="space-y-2">
+              <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-full animate-pulse rounded bg-muted" />
+              <div className="h-3 w-11/12 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-9/12 animate-pulse rounded bg-muted" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {result && (
         <div className="grid gap-6 lg:grid-cols-2">
@@ -75,7 +97,16 @@ function SummarizerPage() {
           </section>
 
           <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Action Items</h2>
+            <div className="flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Action Items</h2>
+              <button
+                onClick={convertToTasks}
+                disabled={result.actions.length === 0}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 disabled:opacity-50"
+              >
+                Convert to tasks <ArrowRight className="h-3 w-3" />
+              </button>
+            </div>
             <ul className="mt-4 space-y-3">
               {result.actions.map((a, i) => (
                 <li key={i} className="flex items-start gap-3">
@@ -90,11 +121,14 @@ function SummarizerPage() {
                   </span>
                 </li>
               ))}
+              {result.actions.length === 0 && (
+                <li className="text-sm text-muted-foreground">No action items detected.</li>
+              )}
             </ul>
           </section>
 
           <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Deadlines</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Decisions / Deadlines</h2>
             <ul className="mt-4 space-y-3">
               {result.deadlines.map((d, i) => (
                 <li key={i} className="flex items-center justify-between rounded-lg bg-muted px-3 py-2.5">
