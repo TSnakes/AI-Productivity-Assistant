@@ -1,5 +1,5 @@
 # AI Workplace Productivity Assistant
-
+**Live Demo Link:** [Click here to view the live application](https://assist-wise-flow-16.lovable.app)
 ## Project Overview
 This is an integrated, AI-powered workplace productivity platform built to automate everyday professional tasks. 
 
