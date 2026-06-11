@@ -54,11 +54,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
         style={{
           backgroundImage:
-            "radial-gradient(circle at 20% 0%, oklch(0.30 0.08 270 / 0.6), transparent 60%), radial-gradient(circle at 100% 100%, oklch(0.25 0.10 280 / 0.4), transparent 50%)",
+            "radial-gradient(circle at 20% 0%, oklch(0.696 0.165 162 / 0.18), transparent 60%), radial-gradient(circle at 100% 100%, oklch(0.30 0.06 256 / 0.6), transparent 55%)",
         }}
       >
         <div className="hidden items-center gap-3 px-6 py-6 md:flex">
-          <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-sidebar-primary to-[oklch(0.70_0.20_295)] text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/40 ring-1 ring-white/10">
+          <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/30 ring-1 ring-white/10">
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
@@ -77,14 +77,14 @@ export function AppShell({ children }: { children: ReactNode }) {
                 to={item.to}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  "group relative flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-medium transition-all duration-200",
+                  "group relative flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-200",
                   active
-                    ? "bg-gradient-to-r from-sidebar-primary/90 to-[oklch(0.62_0.18_285)]/90 text-sidebar-primary-foreground shadow-lg shadow-sidebar-primary/30"
+                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
                     : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
                 )}
               >
-                <Icon className={cn("h-4 w-4 transition-transform group-hover:scale-110", active && "scale-105")} />
-                {item.label}
+                <Icon className={cn("h-4 w-4 flex-shrink-0 transition-transform group-hover:scale-110", active && "scale-105")} />
+                <span>{item.label}</span>
               </Link>
             );
           })}
@@ -93,7 +93,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {/* User profile */}
         <div className="mx-3 mb-4 rounded-2xl border border-white/10 bg-white/5 p-3 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-gradient-to-br from-[oklch(0.65_0.18_15)] to-[oklch(0.55_0.20_295)] text-sm font-semibold text-white shadow-md">
+            <div className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-full bg-primary text-sm font-semibold text-primary-foreground shadow-md">
               AM
             </div>
             <div className="min-w-0 flex-1">
