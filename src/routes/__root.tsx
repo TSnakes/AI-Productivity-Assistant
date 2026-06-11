@@ -79,20 +79,26 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "AI Workplace Hub is a responsive web app that enhances productivity with AI-powered tools." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "AI Workplace Hub is a responsive web app that enhances productivity with AI-powered tools." },
+      { title: "TRinko — AI Workplace Productivity" },
+      { name: "description", content: "TRinko is a premium AI workspace for drafting emails, summarizing meetings, planning your day, and researching faster." },
+      { name: "author", content: "TRinko" },
+      { property: "og:title", content: "TRinko — AI Workplace Productivity" },
+      { property: "og:description", content: "Draft, summarize, plan, and research with a sleek emerald-and-slate AI workspace." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "AI Workplace Hub is a responsive web app that enhances productivity with AI-powered tools." },
+      { name: "twitter:title", content: "TRinko — AI Workplace Productivity" },
+      { name: "twitter:description", content: "Draft, summarize, plan, and research with a sleek emerald-and-slate AI workspace." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0fdfac52-3995-4601-91b5-c352d3fdec2c/id-preview-4e02cf67--1f1fde19-f33c-4ae9-8620-19d67881ab78.lovable.app-1781085507293.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0fdfac52-3995-4601-91b5-c352d3fdec2c/id-preview-4e02cf67--1f1fde19-f33c-4ae9-8620-19d67881ab78.lovable.app-1781085507293.png" },
     ],
     links: [
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      },
       {
         rel: "stylesheet",
         href: appCss,
@@ -107,7 +113,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
       </head>
