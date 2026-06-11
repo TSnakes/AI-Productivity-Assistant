@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Mail, Copy, Sparkles, Loader2, RefreshCw, Bold, Italic, List, Link2 } from "lucide-react";
+import { Mail, Copy, Check, Sparkles, Loader2, RefreshCw, Bold, Italic, List, Link2 } from "lucide-react";
 import { mockEmail, type EmailTone } from "@/lib/mock-ai";
-import { takeEmailSeed } from "@/lib/shared-store";
+import { takeEmailSeed, getDraft, setDraft } from "@/lib/shared-store";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/email")({
   head: () => ({
@@ -16,11 +17,17 @@ export const Route = createFileRoute("/email")({
 });
 
 function EmailPage() {
-  const [recipient, setRecipient] = useState("");
-  const [topic, setTopic] = useState("");
-  const [tone, setTone] = useState<EmailTone>("Formal");
-  const [output, setOutput] = useState("");
+  const [recipient, setRecipient] = useState<string>(() => getDraft("email.recipient", ""));
+  const [topic, setTopic] = useState<string>(() => getDraft("email.topic", ""));
+  const [tone, setTone] = useState<EmailTone>(() => getDraft<EmailTone>("email.tone", "Formal"));
+  const [output, setOutput] = useState<string>(() => getDraft("email.output", ""));
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => setDraft("email.recipient", recipient), [recipient]);
+  useEffect(() => setDraft("email.topic", topic), [topic]);
+  useEffect(() => setDraft("email.tone", tone), [tone]);
+  useEffect(() => setDraft("email.output", output), [output]);
 
   useEffect(() => {
     const seed = takeEmailSeed();
@@ -34,8 +41,17 @@ function EmailPage() {
   const run = (current: { topic: string; tone: EmailTone; recipient: string }) => {
     setLoading(true);
     setTimeout(() => {
-      setOutput(mockEmail(current.topic, current.tone, current.recipient));
-      setLoading(false);
+      try {
+        // Simulated transient failure surface for the unified error toast.
+        const draft = mockEmail(current.topic, current.tone, current.recipient);
+        setOutput(draft);
+      } catch {
+        toast.error("Something went wrong while drafting your email.", {
+          action: { label: "Try again", onClick: () => run(current) },
+        });
+      } finally {
+        setLoading(false);
+      }
     }, 700);
   };
 
@@ -56,8 +72,14 @@ function EmailPage() {
 
   const copy = async () => {
     if (!output) return;
-    await navigator.clipboard.writeText(output);
-    toast.success("Draft copied to clipboard");
+    try {
+      await navigator.clipboard.writeText(output);
+      setCopied(true);
+      toast.success("Draft copied to clipboard");
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      toast.error("Couldn't copy — your browser blocked clipboard access.");
+    }
   };
 
   return (
@@ -75,32 +97,35 @@ function EmailPage() {
       <form onSubmit={generate} className="grid gap-6 rounded-xl border border-border bg-card p-6 shadow-sm md:grid-cols-[1fr_240px]">
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Recipient context</label>
+            <label htmlFor="email-recipient" className="text-sm font-medium">Recipient context</label>
             <input
+              id="email-recipient"
               value={recipient}
               onChange={(e) => setRecipient(e.target.value)}
               placeholder="e.g. Sarah, Head of Design at Northwind — busy, prefers brevity"
-              className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none transition-shadow focus:ring-2 focus:ring-ring"
             />
           </div>
           <div>
-            <label className="text-sm font-medium">Key points</label>
+            <label htmlFor="email-topic" className="text-sm font-medium">Key points</label>
           <textarea
+            id="email-topic"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             rows={6}
             placeholder={"Strong prompt = clear ask + context + outcome.\n\ne.g.\n• Reschedule Thursday's product review to next Tuesday\n• Need updated mockups by Monday EOD\n• Mention we'll share user testing notes ahead of time"}
-            className="mt-2 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            className="mt-2 w-full resize-none rounded-lg border border-input bg-background px-4 py-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-ring"
           />
           </div>
         </div>
         <div className="flex flex-col gap-3">
           <div>
-            <label className="text-sm font-medium">Tone</label>
+            <label htmlFor="email-tone" className="text-sm font-medium">Tone</label>
             <select
+              id="email-tone"
               value={tone}
               onChange={(e) => setTone(e.target.value as EmailTone)}
-              className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
             >
               <option>Formal</option>
               <option>Friendly</option>
@@ -108,16 +133,16 @@ function EmailPage() {
               <option>Direct</option>
             </select>
             <p className="mt-2 text-xs text-muted-foreground">
-              {tone === "Formal" && "Buttoned-up — execs, external partners."}
-              {tone === "Friendly" && "Warm and informal — teammates."}
-              {tone === "Persuasive" && "Drives a decision — urgency + value."}
-              {tone === "Direct" && "No fluff — clear ask, fast read."}
+              {tone === "Formal" && "Passive, respectful enterprise language — no contractions, no emoji."}
+              {tone === "Friendly" && "Warm, first-name energy — light emoji, conversational rhythm."}
+              {tone === "Persuasive" && "Leads with why now, builds urgency, ends on a single ask."}
+              {tone === "Direct" && "Strict bulleted structure — one clear ask, zero filler."}
             </p>
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-[oklch(0.55_0.18_280)] px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-md shadow-primary/30 transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/30 transition-opacity hover:opacity-90 disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {loading ? "Drafting…" : "Generate draft"}
@@ -142,9 +167,15 @@ function EmailPage() {
             <button
               onClick={copy}
               disabled={!output}
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
+              className={cn(
+                "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors disabled:opacity-50",
+                copied
+                  ? "border-primary/50 bg-primary text-primary-foreground"
+                  : "border-border bg-background hover:bg-accent",
+              )}
             >
-              <Copy className="h-4 w-4" /> Copy
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Copied!" : "Copy"}
             </button>
           </div>
         </div>
