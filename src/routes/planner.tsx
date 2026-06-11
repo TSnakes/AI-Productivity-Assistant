@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { CalendarClock, Sparkles, Loader2, Coffee, Users, Target, Inbox } from "lucide-react";
 import { mockPlan, type PlanBlock } from "@/lib/mock-ai";
-import { takePlannerSeed } from "@/lib/shared-store";
+import { takePlannerSeed, getDraft, setDraft } from "@/lib/shared-store";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -27,12 +27,18 @@ const typeMeta: Record<PlanBlock["type"], { icon: typeof Coffee; label: string; 
 };
 
 function PlannerPage() {
-  const [tasks, setTasks] = useState("");
-  const [priority, setPriority] = useState<Priority>("High");
-  const [plan, setPlan] = useState<PlanBlock[] | null>(null);
+  const [tasks, setTasks] = useState<string>(() => getDraft("planner.tasks", ""));
+  const [priority, setPriority] = useState<Priority>(() => getDraft<Priority>("planner.priority", "High"));
+  const [plan, setPlan] = useState<PlanBlock[] | null>(() =>
+    getDraft<PlanBlock[] | null>("planner.plan", null),
+  );
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<View>("Day");
   const [completed, setCompleted] = useState<Record<number, boolean>>({});
+
+  useEffect(() => setDraft("planner.tasks", tasks), [tasks]);
+  useEffect(() => setDraft("planner.priority", priority), [priority]);
+  useEffect(() => setDraft("planner.plan", plan), [plan]);
 
   useEffect(() => {
     const seed = takePlannerSeed();
@@ -50,9 +56,16 @@ function PlannerPage() {
     }
     setLoading(true);
     setTimeout(() => {
-      setPlan(mockPlan(tasks, priority));
-      setCompleted({});
-      setLoading(false);
+      try {
+        setPlan(mockPlan(tasks, priority));
+        setCompleted({});
+      } catch {
+        toast.error("Couldn't build your schedule.", {
+          action: { label: "Try again", onClick: () => setPlan(mockPlan(tasks, priority)) },
+        });
+      } finally {
+        setLoading(false);
+      }
     }, 700);
   };
 
@@ -78,7 +91,7 @@ function PlannerPage() {
             onChange={(e) => setTasks(e.target.value)}
             rows={6}
             placeholder={"One per line — TRinko spots meetings vs focus work automatically.\n\ne.g.\nDesign review with team\nWrite Q3 report\nReply to investor email\nGym"}
-            className="mt-2 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+            className="mt-2 w-full resize-none rounded-lg border border-input bg-background px-4 py-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
         <div className="flex flex-col gap-3">
@@ -87,7 +100,7 @@ function PlannerPage() {
             <select
               value={priority}
               onChange={(e) => setPriority(e.target.value as Priority)}
-              className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="mt-2 w-full rounded-lg border border-input bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
             >
               <option>High</option>
               <option>Medium</option>
@@ -97,7 +110,7 @@ function PlannerPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-primary to-[oklch(0.55_0.18_280)] px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-md shadow-primary/30 hover:opacity-90 disabled:opacity-60"
+            className="mt-auto inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/30 hover:opacity-90 disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {loading ? "Planning…" : "Build my day"}
