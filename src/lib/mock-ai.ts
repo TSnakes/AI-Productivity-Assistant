@@ -53,10 +53,14 @@ export function mockEmail(
   };
 
   const body: Record<EmailTone, string> = {
-    Formal: `I hope this message finds you well. I am writing to provide an update regarding ${t}. Please review the points below and let me know if you have any questions or require further clarification.\n\n• Context and current status\n• Key milestones and owners\n• Next steps and decisions required\n\nYour timely input would be greatly appreciated.`,
-    Friendly: `Quick note about ${t} — wanted to keep everyone in the loop!\n\nHere's where we are:\n• What's done\n• What's in progress\n• What I need from you\n\nLet me know if anything looks off or you'd like to chat through it. 🙌`,
-    Persuasive: `I want to share something important about ${t} — and why acting on it this week matters.\n\nWhy now:\n• Momentum is on our side\n• A short delay creates outsized downstream cost\n• A small commitment unlocks a meaningful win\n\nIf you can confirm by Friday, we can move forward immediately and keep this on track.`,
-    Direct: `Heads up on ${t}.\n\n• What I need: a clear yes/no by EOD Thursday\n• Why it matters: it unblocks the next milestone\n• What happens next: I'll send the rollout plan once confirmed\n\nIf there are blockers, reply with one line and I'll handle it.`,
+    // Formal — passive, respectful, enterprise register. No emoji, no contractions.
+    Formal: `I hope this message finds you well. I am writing to share an update regarding ${t}. The relevant context, current status, and outstanding decisions are outlined below for your review.\n\n• Context and current status are summarised for clarity\n• Key milestones and owners have been identified\n• Decisions required are flagged for your consideration\n\nYour guidance on the points above would be greatly appreciated at your earliest convenience.`,
+    // Friendly — warm, first-name energy, light emoji allowed.
+    Friendly: `Quick note about ${t} — wanted to keep you in the loop!\n\nHere's where things stand:\n• What's done\n• What's in progress\n• What I'd love your input on\n\nHappy to jump on a quick call if it's easier — just let me know what works. 🙌`,
+    // Persuasive — leads with the why, builds urgency, ends with a single ask.
+    Persuasive: `I'd like to share something important about ${t} — and why moving on it this week matters.\n\nWhy now:\n• Momentum is genuinely on our side\n• A short delay creates outsized downstream cost\n• A small commitment unlocks a meaningful win\n\nIf you can confirm by Friday, we'll move immediately and keep this on track.`,
+    // Direct — strict bulleted structure, one clear ask, zero filler.
+    Direct: `Re: ${t}\n\n• Ask: a yes/no by EOD Thursday\n• Why it matters: unblocks the next milestone\n• Next step: I'll send the rollout plan the moment you confirm\n• Blockers: reply with one line and I'll handle it`,
   };
 
   return `Subject: ${subject}\n\n${greeting[safeTone]}\n\n${body[safeTone]}\n\n${closing[safeTone]}`;
@@ -177,6 +181,14 @@ function fmtHour(h: number): string {
 export function mockChat(prompt: string): string {
   const p = prompt.toLowerCase().trim();
   if (!p) return "Ask me anything about your work day.";
+  if (/weekly progress report/.test(p))
+    return "Weekly Progress Report — Outline\n\n1. Headline (1 sentence on the week)\n2. Shipped this week — bullet list with owners\n3. In progress — % complete + ETA\n4. Risks & blockers — what you need from leadership\n5. Metrics that moved — before / after\n6. Next week's top 3 priorities\n\nKeep each section to 3 bullets max so it stays skimmable.";
+  if (/email etiquette/.test(p))
+    return "Corporate Email Etiquette — quick reference\n\n• Subject lines: action + topic (e.g. \"Decision needed: Q3 budget\").\n• Open with the ask, not the backstory.\n• Use bullets for anything over two sentences.\n• Reply within one business day, even if just to acknowledge.\n• CC sparingly; BCC only for distribution lists.\n• Proofread, then remove one sentence before sending.";
+  if (/meeting agenda template/.test(p))
+    return "45-Minute Meeting Agenda Template\n\n• 0:00–0:05 — Context & desired outcome\n• 0:05–0:15 — Status / pre-read review\n• 0:15–0:35 — Decisions & discussion (timeboxed per topic)\n• 0:35–0:42 — Action items, owners, due dates\n• 0:42–0:45 — Wrap, next meeting, async follow-ups\n\nShare the agenda 24h ahead and ask attendees to add questions inline.";
+  if (/sensitive workplace data|securely handle/.test(p))
+    return "Handling sensitive workplace data — the basics\n\n• Default to least-privilege: share only with those who must see it.\n• Use approved tools (your company SSO, encrypted storage); never email PII in plaintext.\n• Mask or tokenise customer identifiers in screenshots and demos.\n• Lock your screen, enable MFA, and rotate shared credentials in a password manager.\n• Report suspected leaks to security within the hour — early reports are never penalised.\n\nThis is general guidance; always defer to your company's data-handling policy.";
   if (/email|write|draft/.test(p))
     return "Try the Email Gen tab for a structured draft — pick a tone and I'll generate a starter email you can edit.";
   if (/summar|notes|meeting/.test(p))
