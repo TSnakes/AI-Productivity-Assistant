@@ -20,11 +20,10 @@ interface Msg {
 }
 
 const SUGGESTIONS = [
-  "Help me draft a presentation outline",
-  "Review my daily schedule",
-  "Summarize a meeting transcript",
-  "Research usage-based pricing models",
-  "Draft a friendly follow-up email",
+  "Draft a weekly progress report outline",
+  "Summarize standard corporate email etiquette",
+  "Create a 45-minute meeting agenda template",
+  "How do I securely handle sensitive workplace data?",
 ];
 
 function ChatPage() {
