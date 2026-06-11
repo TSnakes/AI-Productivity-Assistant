@@ -9,10 +9,10 @@ interface Msg {
 }
 
 const SUGGESTIONS = [
-  "Help me draft a presentation outline",
-  "Review my daily schedule",
-  "Summarize yesterday's standup",
-  "Plan a focused 2-hour block",
+  "Draft a weekly progress report outline",
+  "Summarize standard corporate email etiquette",
+  "Create a 45-minute meeting agenda template",
+  "How do I securely handle sensitive workplace data?",
 ];
 
 export function ChatWidget() {
@@ -41,7 +41,7 @@ export function ChatWidget() {
     <>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="fixed bottom-6 right-6 z-40 grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-primary to-[oklch(0.60_0.20_290)] text-primary-foreground shadow-xl shadow-primary/40 ring-1 ring-white/20 transition-transform hover:scale-105"
+        className="fixed bottom-6 right-6 z-40 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-xl shadow-primary/40 ring-1 ring-white/10 transition-transform hover:scale-105"
         aria-label="Open chat"
       >
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}

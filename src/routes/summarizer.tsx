@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FileText, Sparkles, Loader2, CalendarDays, ArrowRight } from "lucide-react";
 import { mockSummarize, type SummaryResult } from "@/lib/mock-ai";
-import { setPlannerSeed } from "@/lib/shared-store";
+import { setPlannerSeed, getDraft, setDraft } from "@/lib/shared-store";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/summarizer")({
@@ -17,23 +17,47 @@ export const Route = createFileRoute("/summarizer")({
 
 function SummarizerPage() {
   const navigate = useNavigate();
-  const [notes, setNotes] = useState("");
-  const [result, setResult] = useState<SummaryResult | null>(null);
+  const [notes, setNotes] = useState<string>(() => getDraft("summarizer.notes", ""));
+  const [result, setResult] = useState<SummaryResult | null>(() =>
+    getDraft<SummaryResult | null>("summarizer.result", null),
+  );
   const [done, setDone] = useState<Record<number, boolean>>({});
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => setDraft("summarizer.notes", notes), [notes]);
+  useEffect(() => setDraft("summarizer.result", result), [result]);
+
+  const run = (text: string) => {
+    setLoading(true);
+    setTimeout(() => {
+      try {
+        setResult(mockSummarize(text));
+        setDone({});
+      } catch {
+        toast.error("We couldn't summarize that just now.", {
+          action: { label: "Try again", onClick: () => run(text) },
+        });
+      } finally {
+        setLoading(false);
+      }
+    }, 800);
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!notes.trim()) {
+    const trimmed = notes.trim();
+    if (!trimmed) {
       toast.error("Paste a transcript or bullet notes to summarize.");
       return;
     }
-    setLoading(true);
-    setTimeout(() => {
-      setResult(mockSummarize(notes));
-      setDone({});
-      setLoading(false);
-    }, 800);
+    if (trimmed.length < 50) {
+      toast.message("Notes too short", {
+        description:
+          "To provide an accurate summary, please paste at least a paragraph of notes or a short transcript.",
+      });
+      return;
+    }
+    run(trimmed);
   };
 
   const convertToTasks = () => {
@@ -62,13 +86,16 @@ function SummarizerPage() {
           onChange={(e) => setNotes(e.target.value)}
           rows={10}
           placeholder={"Tip: include names where you can — TRinko will route action items by owner.\n\ne.g.\nSarah walked us through the Q3 plan…\nDecision: ship beta to 50 customers by Sept 14\nMaya to follow up with legal on DPA template"}
-          className="mt-2 w-full resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-ring"
+          className="mt-2 w-full resize-none rounded-lg border border-input bg-background px-4 py-3 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-ring"
         />
+        <p className="mt-2 text-xs text-muted-foreground">
+          {notes.trim().length}/50 characters minimum for an accurate summary.
+        </p>
         <div className="mt-4 flex justify-end">
           <button
             type="submit"
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-primary to-[oklch(0.55_0.18_280)] px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-md shadow-primary/30 hover:opacity-90 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/30 hover:opacity-90 disabled:opacity-60"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {loading ? "Summarizing…" : "Summarize notes"}

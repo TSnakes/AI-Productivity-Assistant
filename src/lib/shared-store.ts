@@ -51,3 +51,37 @@ export function takeEmailSeed() {
   }
   return v;
 }
+
+// ----------------------------------------------------------------------------
+// Draft cache — keeps user inputs alive across tab switches within a session.
+// Stored as plain JSON in sessionStorage under a separate key so it never
+// interferes with the one-shot handoff seeds above.
+// ----------------------------------------------------------------------------
+
+const DRAFTS_KEY = "trinko-drafts";
+
+type Drafts = Record<string, unknown>;
+
+function loadDrafts(): Drafts {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(sessionStorage.getItem(DRAFTS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+function saveDrafts(d: Drafts) {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(DRAFTS_KEY, JSON.stringify(d));
+}
+
+export function getDraft<T>(key: string, fallback: T): T {
+  const d = loadDrafts();
+  return key in d ? (d[key] as T) : fallback;
+}
+
+export function setDraft<T>(key: string, value: T) {
+  const d = loadDrafts();
+  d[key] = value;
+  saveDrafts(d);
+}
