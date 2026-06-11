@@ -1,33 +1,28 @@
 # TRinko — Premium AI Workplace Productivity Suite
 
-TRinko is an elite, high-performance SaaS-style AI Productivity Assistant built for any kind of worplace. Inspired by the clean, minimalist design systems of Linear and Notion, TRinko seamlessly bridges the gap between raw AI capabilities and intuitive workplace workflows.
+TRinko is a high-performance, SaaS-style AI Productivity Assistant built for the ASA 6 Programme (Week 6). Built with a sophisticated Deep Slate & Emerald design system, TRinko combines robust prompt engineering with intuitive workplace workflows.
 
 **[Live App Link](https://assist-wise-flow-16.lovable.app)**
 
 ---
 
-## Premium Enhancements & Architecture
+## Premium Features & Architecture
 
-### 1. Unified Workspace & SaaS UI
-- **Branding:** Rebranded to TRinko with a minimalist, deep midnight blue glassmorphic sidebar navigation layout.
-- **Flawless UX:** Features responsive hamburger menus for mobile, beautiful skeleton loading states, and a masterfully integrated "Responsible AI" micro-banner.
-- **Interactive Dashboard:** Upgraded from static metric cards to interactive widgets featuring recent email drafts, active timelines, and quick-saved research insights.
+### 1. Sophisticated Slate & Emerald UI
+- **Design System:** Upgraded to a sleek dark slate background (`#0f172a`) paired with vibrant emerald green (`#10b981`) accent indicators, offering a modern, highly professional dark mode aesthetic.
+- **Enhanced Accessibility:** High-contrast text elements, spacious input padding, and clear icon-and-label pairings ensure the interface is highly accessible and intuitive.
+- **State Persistence:** Implemented input caching across tabs, allowing users to switch between the Planner and the Email Generator without losing their active drafts or notes.
 
-### 2. Core Feature Modules
-- **Smart Email Generator:** Context-aware generation with tone selection (Formal, Friendly, Persuasive, Direct) and an editable rich-text output container with one-click copy functionality.
-- **Meeting Notes Summarizer:** Parses raw transcripts into distinct, structured outputs: Executive Summaries, interactive Action Items (with checkboxes), and core Decisions.
-- **AI Task Planner:** A structured daily/weekly prioritization board (High/Medium/Low indicators) for tracking deep work.
-- **AI Research Assistant:** Markdown-formatted analytical breakdown tool with a dedicated "Key Takeaways" summary sidebar.
-- **Dual-State Chatbot:** Accessible via both a full-screen dedicated view and an omnipresent floating widget featuring predefined prompt chips.
-
-### 3. Cross-Feature Integration (Innovation Engine)
-To prove the power of unified AI workflows, TRinko features two direct integrations:
-- **Summarizer ➔ Planner:** "Convert Action Items to Tasks" instantly pushes extracted meeting tasks into the active scheduling calendar.
-- **Research ➔ Email:** "Share via Email" automatically ports deep research insights directly into the Email Generator context field for instant drafting.
+### 2. Core Feature Modules & Advanced Guardrails
+- **Smart Email Generator:** Context-aware generation with tone selection (Formal, Friendly, Persuasive, Direct) embedded with structural style constraints. Features an interactive "Copy to Clipboard" micro-interaction with live success feedback.
+- **Meeting Notes Summarizer:** Includes an automatic validation layer that prompts users for high-quality inputs (minimum 50 characters) to ensure summary accuracy. Parses raw transcripts into distinct, structured outputs.
+- **AI Task Planner:** A structured calendar and prioritization view for organizing daily workplace objectives.
+- **AI Research Assistant:** A clean search-style interface formatting deep insights into structured markdown layouts.
+- **AI Chatbot Interface:** Features quick-access interactive "Prompt Chips" for instant framing of standard corporate tasks (e.g., meeting agendas, security practices, report outlines).
 
 ---
 
-## Advanced Prompt Engineering Applied
-This project demonstrates advanced prompt optimization, including:
-- **Few-Shot System Framing:** Hardcoding tone guidelines directly into the LLM context.
-- **UI-Driven Placeholders:** Using instructional placeholder texts to guide end-users into formatting better prompts natively.
+## Prompt Engineering & Responsible AI Foundations
+This project demonstrates robust compliance with the core program objectives:
+- **Input Validation:** Restricting short inputs in the summarizer to prevent low-quality AI outputs.
+- **System Constraints:** Hardcoding operational boundaries inside the tone dropdowns to guarantee ethical, professional, and accurate workplace text generation.
